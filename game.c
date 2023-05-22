@@ -87,10 +87,10 @@ static void place_random_lake_step(int x, int y, float probability)
 		return;
 	}
 	grid[y][x].type = TILE_WATER;
-	place_random_lake_step(x - 1, y, probability * 0.85);
-	place_random_lake_step(x + 1, y, probability * 0.85);
-	place_random_lake_step(x, y - 1, probability * 0.85);
-	place_random_lake_step(x, y + 1, probability * 0.85);
+	place_random_lake_step(x - 1, y, probability * 0.875);
+	place_random_lake_step(x + 1, y, probability * 0.875);
+	place_random_lake_step(x, y - 1, probability * 0.875);
+	place_random_lake_step(x, y + 1, probability * 0.875);
 }
 
 static void place_random_lake()
