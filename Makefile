@@ -1,6 +1,6 @@
 OBJECTS :=
 CC := clang
-CFLAGS += -Wall -lSDL2
+CFLAGS += -Wall -lSDL2 -lm
 
 game: $(OBJECTS) game.c
 	$(CC) $(CFLAGS) -o $@ $<

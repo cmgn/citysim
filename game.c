@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <math.h>
 
 #include <SDL2/SDL.h>
 
@@ -16,6 +17,7 @@
 enum tile_type {
 	TILE_GRASS,
 	TILE_WATER,
+	TILE_ROAD,
 	TILE_TYPE_COUNT,
 };
 
@@ -30,7 +32,8 @@ static struct tile grid[GRID_HEIGHT][GRID_WIDTH] = { 0 };
 // Rendering data.
 static const char *tile_texture_paths[TILE_TYPE_COUNT] = {
 		/* TILE_GRASS */ "assets/grass.bmp",
-		/* TILE_WATER */ "assets/water.bmp"
+		/* TILE_WATER */ "assets/water.bmp",
+		/* TILE_ROAD  */ "assets/road.bmp",
 };
 static SDL_Texture *tile_textures[TILE_TYPE_COUNT] = { 0 };
 
@@ -100,6 +103,48 @@ static void place_random_lake()
 	place_random_lake_step(x, y, 1.0f);
 }
 
+static float euclidean_distance(int x1, int y1, int x2, int y2)
+{
+	return sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
+}
+
+static void swap(void *a, void *b, int size)
+{
+	unsigned char buf[size];
+	memcpy(buf, a, size);
+	memcpy(a, b, size);
+	memcpy(b, buf, size);
+}
+
+static void draw_road(int x1, int y1, int x2, int y2)
+{
+	if (x1 > x2) {
+		swap(&x1, &x2, sizeof(x1));
+	}
+	if (y1 > y2) {
+		swap(&y1, &y2, sizeof(y1));
+	}
+	for (int x = x1; x <= x2; x++) {
+		grid[y1][x].type = TILE_ROAD;
+	}
+	for (int y = y1; y <= y2; y++) {
+		grid[y][x2].type = TILE_ROAD;
+	}
+}
+
+static void place_random_road()
+{
+	int x1 = rand() % GRID_WIDTH;
+	int y1 = rand() % GRID_HEIGHT;
+	int x2;
+	int y2;
+	do {
+		x2 = rand() % GRID_WIDTH;
+		y2 = rand() % GRID_HEIGHT;
+	} while (euclidean_distance(x1, y1, x2, y2) < 8);
+	draw_road(x1, y1, x2, y2);
+}
+
 int main(int argc, char **argv)
 {
 	srand(time(NULL));
@@ -119,6 +164,7 @@ int main(int argc, char **argv)
 		goto quit;
 	}
 	place_random_lake();
+	place_random_road();
 	for (;;) {
 		SDL_Event event;
 		while (SDL_PollEvent(&event)) {
