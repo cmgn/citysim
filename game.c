@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 
 #include <SDL2/SDL.h>
 
@@ -67,8 +68,41 @@ static void render()
 	}
 }
 
+static float random_float()
+{
+	return (float)rand() / (float)RAND_MAX;
+}
+
+static int in_grid(int x, int y)
+{
+	return x >= 0 && x < GRID_WIDTH && y >= 0 && y < GRID_HEIGHT;
+}
+
+static void place_random_lake_step(int x, int y, float probability)
+{
+	if (random_float() > probability) {
+		return;
+	}
+	if (!in_grid(x, y) || grid[y][x].type == TILE_WATER) {
+		return;
+	}
+	grid[y][x].type = TILE_WATER;
+	place_random_lake_step(x - 1, y, probability * 0.85);
+	place_random_lake_step(x + 1, y, probability * 0.85);
+	place_random_lake_step(x, y - 1, probability * 0.85);
+	place_random_lake_step(x, y + 1, probability * 0.85);
+}
+
+static void place_random_lake()
+{
+	int x = rand() % GRID_WIDTH;
+	int y = rand() % GRID_HEIGHT;
+	place_random_lake_step(x, y, 1.0f);
+}
+
 int main(int argc, char **argv)
 {
+	srand(time(NULL));
 	window = SDL_CreateWindow(argv[0], SDL_WINDOWPOS_UNDEFINED,
 				  SDL_WINDOWPOS_UNDEFINED, WINDOW_WIDTH,
 				  WINDOW_HEIGHT, 0);
@@ -84,6 +118,7 @@ int main(int argc, char **argv)
 	if (init_rendering() < 0) {
 		goto quit;
 	}
+	place_random_lake();
 	for (;;) {
 		SDL_Event event;
 		while (SDL_PollEvent(&event)) {
