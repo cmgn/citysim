@@ -22,6 +22,7 @@ enum tile_type {
 	TILE_GRASS,
 	TILE_WATER,
 	TILE_ROAD,
+	TILE_HOUSE,
 	TILE_TYPE_COUNT,
 };
 
@@ -39,6 +40,7 @@ static const char *tile_texture_paths[TILE_TYPE_COUNT] = {
 		/* TILE_GRASS */ "assets/grass.bmp",
 		/* TILE_WATER */ "assets/water.bmp",
 		/* TILE_ROAD  */ "assets/road.bmp",
+		/* TILE_HOUSE */ "assets/house.bmp",
 };
 static SDL_Texture *tile_textures[TILE_TYPE_COUNT] = { 0 };
 static SDL_Texture *overlay_text_texture = 0;
@@ -206,6 +208,36 @@ static void place_random_road()
 	draw_road(x1, y1, x2, y2);
 }
 
+static int has_neighbouring_road(int x, int y)
+{
+	struct { int dx, dy; } deltas[] = {
+		{ -1, +0 }, { +1, +0 },
+		{ +0, -1 }, { +0, +1 },
+	};
+	int num_deltas = sizeof(deltas)/sizeof(*deltas);
+	for (int i = 0; i < num_deltas; i++) {
+		int x1 = x + deltas[i].dx;
+		int y1 = y + deltas[i].dy;
+		if (in_grid(x1, y1) && grid[y1][x1].type == TILE_ROAD) {
+			return 1;
+		}
+	}
+	return 0;
+}
+
+static void place_houses_along_road()
+{
+	for (int y = 0; y < GRID_HEIGHT; y++) {
+		for (int x = 0; x < GRID_WIDTH; x++) {
+			if (grid[y][x].type == TILE_GRASS
+			    && has_neighbouring_road(x, y)
+			    && random_float() < 0.15) {
+				grid[y][x].type = TILE_HOUSE;
+			}
+		}
+	}
+}
+
 int main(int argc, char **argv)
 {
 	srand(time(NULL));
@@ -226,6 +258,7 @@ int main(int argc, char **argv)
 	}
 	place_random_lake();
 	place_random_road();
+	place_houses_along_road();
 	for (;;) {
 		SDL_Event event;
 		while (SDL_PollEvent(&event)) {
