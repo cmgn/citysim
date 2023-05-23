@@ -4,4 +4,7 @@
 extern void init_simulate();
 extern void simulate();
 
+extern int population;
+extern int emigration;
+
 #endif

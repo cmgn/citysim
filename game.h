@@ -22,6 +22,9 @@ enum tile_type {
 
 struct tile {
 	enum tile_type type;
+	union {
+		int house_index;
+	};
 };
 
 extern SDL_Window *window;

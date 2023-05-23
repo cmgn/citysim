@@ -32,6 +32,7 @@ int main(int argc, char **argv)
 		goto quit;
 	}
 	init_simulate();
+	unsigned long long last_frame = SDL_GetTicks64() - 1000;
 	for (;;) {
 		SDL_Event event;
 		while (SDL_PollEvent(&event)) {
@@ -39,7 +40,14 @@ int main(int argc, char **argv)
 				goto quit;
 			}
 		}
+		unsigned long long this_frame = SDL_GetTicks64();
+		if (this_frame - last_frame < 250) {
+			continue;
+		}
+		last_frame = this_frame;
 		simulate();
+		SDL_Log("Population: %d; Net Migration: %d", population,
+			-emigration);
 		render();
 		SDL_RenderPresent(renderer);
 	}
