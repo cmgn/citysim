@@ -161,7 +161,7 @@ static void update_rendering_tile(int x, int y)
 			SDL_Surface *tsurface = tile_surfaces[tile->type];
 			SDL_Rect rect = { dx * CELL_WIDTH, dy * CELL_HEIGHT,
 					  CELL_WIDTH, CELL_HEIGHT };
-			SDL_BlitSurface(tsurface, 0, rtile->surface, &rect);
+			SDL_BlitScaled(tsurface, 0, rtile->surface, &rect);
 		}
 	}
 	rtile->texture = SDL_CreateTextureFromSurface(renderer,
