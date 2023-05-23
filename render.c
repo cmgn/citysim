@@ -63,7 +63,31 @@ static void write_text(SDL_Surface *surface, int x, int y, const char *text,
 	}
 }
 
-int init_render()
+static int init_rendering_tile(struct rendering_tile *rtile)
+{
+	rtile->surface = SDL_CreateRGBSurface(0, CELL_WIDTH * RCELL_WIDTH,
+					      CELL_HEIGHT * RCELL_HEIGHT, 32,
+					      0, 0, 0, 0);
+	if (!rtile->surface) {
+		return -1;
+	}
+	rtile->needs_update = 1;
+	return 0;
+}
+
+static int init_rendering_grid()
+{
+	for (int y = 0; y < RGRID_HEIGHT; y++) {
+		for (int x = 0; x < RGRID_WIDTH; x++) {
+			if (init_rendering_tile(&rendering_grid[y][x]) < 0) {
+				return -1;
+			}
+		}
+	}
+	return 0;
+}
+
+static int init_tile_surfaces()
 {
 	for (int i = 0; i < TILE_TYPE_COUNT; i++) {
 		const char *path = tile_bitmap_paths[i];
@@ -74,6 +98,11 @@ int init_render()
 		}
 		tile_surfaces[i] = surface;
 	}
+	return 0;
+}
+
+static int init_overlay_text()
+{
 	SDL_Surface *overlay_text_surface = SDL_CreateRGBSurface(
 		0, strlen(overlay_text) * 8 * OVERLAY_TEXT_SIZE,
 		8 * OVERLAY_TEXT_SIZE, 32, 0, 0, 0, 0
@@ -91,6 +120,24 @@ int init_render()
 	return 0;
 }
 
+typedef int (*init_function)();
+
+int init_render()
+{
+	init_function init_functions[] = {
+		init_rendering_grid,
+		init_tile_surfaces,
+		init_overlay_text,
+	};
+	int num_init_functions = sizeof(init_functions)/sizeof(*init_functions);
+	for (int i = 0; i < num_init_functions; i++) {
+		if (init_functions[i]() < 0) {
+			return -1;
+		}
+	}
+	return 0;
+}
+
 static void render_overlay_text()
 {
 	SDL_Rect rect = { 10, 10, strlen(overlay_text) * OVERLAY_TEXT_SIZE * 8,
@@ -101,13 +148,8 @@ static void render_overlay_text()
 static void update_rendering_tile(int x, int y)
 {
 	struct rendering_tile *rtile = &rendering_grid[y][x];
-	if (!rtile->needs_update && rtile->surface) {
+	if (!rtile->needs_update) {
 		return;
-	}
-	if (!rtile->surface) {
-		int w = CELL_WIDTH * RCELL_WIDTH;
-		int h = CELL_HEIGHT * RCELL_HEIGHT;
-		rtile->surface = SDL_CreateRGBSurface(0, w, h, 32, 0, 0, 0, 0);
 	}
 	if (rtile->texture) {
 		SDL_DestroyTexture(rtile->texture);
