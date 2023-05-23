@@ -1,4 +1,4 @@
-OBJECTS := render.o
+OBJECTS := render.o simulate.o
 CC := clang
 CFLAGS += -Wall
 
