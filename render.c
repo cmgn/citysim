@@ -48,11 +48,11 @@ static unsigned int sdl_color_to_uint32(const SDL_Color *c)
 	return ret;
 }
 
-// TODO(cmgn): provided colour must already be converted?
+// TODO(cmgn): provided color must already be converted?
 static void write_text(SDL_Surface *surface, int x, int y, const char *text,
-		       int size, SDL_Color *colour)
+		       int size, SDL_Color *color)
 {
-	unsigned int cint = sdl_color_to_uint32(colour);
+	unsigned int cint = sdl_color_to_uint32(color);
 	for (int k = 0; text[k]; k++) {
 		int c = text[k];
 		for (int j = 0; j < 8; j++) {
