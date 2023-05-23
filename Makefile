@@ -5,7 +5,7 @@ CFLAGS += -Wall
 game: $(OBJECTS) game.c
 	$(CC) $(CFLAGS) -lSDL2 -lm -o $@ $^
 
-%.o: %.c
+%.o: %.c %.h
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 .PHONY: clean
