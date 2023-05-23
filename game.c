@@ -12,6 +12,12 @@ SDL_Window *window = 0;
 SDL_Renderer *renderer = 0;
 struct tile grid[GRID_HEIGHT][GRID_WIDTH] = { 0 };
 
+static void update_tile(int x, int y, enum tile_type type)
+{
+	grid[y][x].type = type;
+	render_mark_tile(x, y);
+}
+
 static float random_float()
 {
 	return (float)rand() / (float)RAND_MAX;
@@ -30,7 +36,7 @@ static void place_random_lake_step(int x, int y, float probability)
 	if (!in_grid(x, y) || grid[y][x].type == TILE_WATER) {
 		return;
 	}
-	grid[y][x].type = TILE_WATER;
+	update_tile(x, y, TILE_WATER);
 	place_random_lake_step(x - 1, y, probability * 0.875);
 	place_random_lake_step(x + 1, y, probability * 0.875);
 	place_random_lake_step(x, y - 1, probability * 0.875);
@@ -66,10 +72,10 @@ static void draw_road(int x1, int y1, int x2, int y2)
 		swap(&y1, &y2, sizeof(y1));
 	}
 	for (int x = x1; x <= x2; x++) {
-		grid[y1][x].type = TILE_ROAD;
+		update_tile(y1, x, TILE_ROAD);
 	}
 	for (int y = y1; y <= y2; y++) {
-		grid[y][x2].type = TILE_ROAD;
+		update_tile(y, x2, TILE_ROAD);
 	}
 }
 
@@ -110,7 +116,7 @@ static void place_houses_along_road()
 			if (grid[y][x].type == TILE_GRASS
 			    && has_neighbouring_road(x, y)
 			    && random_float() < 0.15) {
-				grid[y][x].type = TILE_HOUSE;
+				update_tile(x, y, TILE_HOUSE);
 			}
 		}
 	}
