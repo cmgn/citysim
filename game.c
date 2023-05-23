@@ -7,6 +7,7 @@
 
 #include "game.h"
 #include "render.h"
+#include "menu.h"
 #include "simulate.h"
 
 SDL_Window *window = 0;
@@ -31,6 +32,7 @@ int main(int argc, char **argv)
 	if (init_render() < 0) {
 		goto quit;
 	}
+	init_menu();
 	init_simulate();
 	unsigned long long last_frame = SDL_GetTicks64() - 1000;
 	for (;;) {
