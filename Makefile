@@ -1,13 +1,13 @@
-OBJECTS :=
+OBJECTS := render.o
 CC := clang
-CFLAGS += -Wall -lSDL2 -lm
+CFLAGS += -Wall
 
 game: $(OBJECTS) game.c
-	$(CC) $(CFLAGS) -o $@ $<
+	$(CC) $(CFLAGS) -lSDL2 -lm -o $@ $^
 
 %.o: %.c
-	$(CC) $(CFLAGS) -o $@ $<
+	$(CC) $(CFLAGS) -c -o $@ $<
 
 .PHONY: clean
 clean:
-	$(RM) game
+	$(RM) game $(OBJECTS)
