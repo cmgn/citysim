@@ -5,8 +5,11 @@
 
 #include <SDL2/SDL.h>
 
+typedef const char *(*text_callback)();
+
 struct menu_entry {
 	const char *text;
+	text_callback callback;
 };
 
 struct menu {

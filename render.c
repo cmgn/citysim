@@ -14,6 +14,7 @@ struct rendering_tile {
 struct compiled_menu {
 	int w;
 	int h;
+	int dynamic;
 	SDL_Texture *texture;
 	struct menu *menu;
 };
@@ -169,30 +170,6 @@ static void render_grid()
 	}
 }
 
-static void render_menus()
-{
-	for (int i = 0; i < num_menus; i++) {
-		struct compiled_menu *cm = &menus[i];
-		SDL_Rect rect = { cm->menu->x, cm->menu->y, cm->w, cm->h };
-		SDL_RenderCopy(renderer, cm->texture, 0, &rect);
-	}
-}
-
-void render()
-{
-	update_rendering_grid();
-	render_grid();
-	render_menus();
-}
-
-
-void render_mark_tile(int x, int y)
-{
-	x /= RCELL_WIDTH;
-	y /= RCELL_HEIGHT;
-	rendering_grid[y][x].needs_update = 1;
-}
-
 static void compile_menu(struct compiled_menu *cm, struct menu *m)
 {
 	cm->menu = m;
@@ -202,6 +179,10 @@ static void compile_menu(struct compiled_menu *cm, struct menu *m)
 	cm->w = 0;
 	for (int i = 0; i < m->num_entries; i++) {
 		struct menu_entry *e = &m->entries[i];
+		if (e->callback) {
+			e->text = e->callback();
+			cm->dynamic = 1;
+		}
 		int e_width = strlen(e->text) * 8 * m->font_size;
 		if (e_width > cm->w) {
 			cm->w = e_width;
@@ -236,6 +217,35 @@ static void compile_menu(struct compiled_menu *cm, struct menu *m)
 	}
 	SDL_FreeSurface(surface);
 	cm->texture = texture;
+}
+
+
+static void render_menus()
+{
+	for (int i = 0; i < num_menus; i++) {
+		struct compiled_menu *cm = &menus[i];
+		if (cm->dynamic) {
+			SDL_DestroyTexture(cm->texture);
+			compile_menu(cm, cm->menu);
+		}
+		SDL_Rect rect = { cm->menu->x, cm->menu->y, cm->w, cm->h };
+		SDL_RenderCopy(renderer, cm->texture, 0, &rect);
+	}
+}
+
+void render()
+{
+	update_rendering_grid();
+	render_grid();
+	render_menus();
+}
+
+
+void render_mark_tile(int x, int y)
+{
+	x /= RCELL_WIDTH;
+	y /= RCELL_HEIGHT;
+	rendering_grid[y][x].needs_update = 1;
 }
 
 void render_push_menu(struct menu *m)
