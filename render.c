@@ -19,6 +19,13 @@ struct compiled_menu {
 	struct menu *menu;
 };
 
+struct compiled_graph {
+	SDL_Texture *texture;
+	struct graph *graph;
+};
+
+#define RGBA(R, G, B, A) ((A) << 24 | (R) << 16 | (G) << 8 | (B))
+
 #define RGRID_WIDTH 4
 #define RGRID_HEIGHT 4
 
@@ -37,6 +44,11 @@ static SDL_Surface *tile_surfaces[TILE_TYPE_COUNT] = { 0 };
 
 static struct compiled_menu menus[MAX_MENUS] = { 0 };
 static int num_menus = 0;
+
+#define MAX_GRAPHS 32
+
+static struct compiled_graph graphs[MAX_GRAPHS] = { 0 };
+static int num_graphs = 0;
 
 static unsigned int sdl_color_to_uint32(const SDL_Color *c)
 {
@@ -170,6 +182,11 @@ static void render_grid()
 	}
 }
 
+struct wh_pair {
+	int w;
+	int h;
+};
+
 static void compile_menu(struct compiled_menu *cm, struct menu *m)
 {
 	cm->menu = m;
@@ -179,6 +196,8 @@ static void compile_menu(struct compiled_menu *cm, struct menu *m)
 	cm->w = 0;
 	for (int i = 0; i < m->num_entries; i++) {
 		struct menu_entry *e = &m->entries[i];
+		// TODO(cmgn): Only re-draw when at least one of the callbacks
+		// change the text.
 		if (e->callback) {
 			e->text = e->callback();
 			cm->dynamic = 1;
@@ -233,11 +252,143 @@ static void render_menus()
 	}
 }
 
+static void draw_line_gradual(SDL_Surface *surface, int x0, int y0, int x1, int y1, unsigned int color, int width)
+{
+	int dx = x1 - x0;
+	int dy = y1 - y0;
+	int yi = 1;
+	if (dy < 0) {
+		yi = -1;
+		dy = -dy;
+	}
+	int d = 2*dy - dx;
+	int y = y0;
+	for (int x = x0; x <= x1; x++) {
+		SDL_Rect r = { x, y, width, width };
+		SDL_FillRect(surface, &r, color);
+		if (d > 0) {
+			y += yi;
+			d += 2 * (dy - dx);
+		} else {
+			d += 2 * dy;
+		}
+	}
+}
+
+static void draw_line_steep(SDL_Surface *surface, int x0, int y0, int x1, int y1, unsigned int color, int width)
+{
+	int dx = x1 - x0;
+	int dy = y1 - y0;
+	int xi = 1;
+	if (dx < 0) {
+		xi = -1;
+		dx = -dx;
+	}
+	int d = 2*dx - dy;
+	int x = x0;
+	for (int y = y0; y <= y1; y++) {
+		SDL_Rect r = { x, y, width, width };
+		SDL_FillRect(surface, &r, color);
+		if (d > 0) {
+			x += xi;
+			d += 2 * (dx - dy);
+		} else {
+			d += 2 * dx;
+		}
+	}
+}
+
+static void draw_line(SDL_Surface *surface, int x0, int y0, int x1, int y1, unsigned int color, int width)
+{
+	if (abs(y1 - y0) < abs(x1 - x0)) {
+		if (x0 > x1) {
+			draw_line_gradual(surface, x1, y1, x0, y0, color, width);
+		} else {
+			draw_line_gradual(surface, x0, y0, x1, y1, color, width);
+		}
+	} else {
+		if (y0 > y1) {
+			draw_line_steep(surface, x1, y1, x0, y0, color, width);
+		} else {
+			draw_line_steep(surface, x0, y0, x1, y1, color, width);
+		}
+	}
+}
+
+#define GRAPH_LINE_WIDTH 2
+#define GRAPH_PADDING 3
+
+#define GRAPH_BG_COLOR RGBA(255, 255, 255, 255)
+#define GRAPH_FG_COLOR RGBA(  0,   0,   0, 255)
+#define GRAPH_LN_COLOR RGBA(255,   0,   0, 255)
+
+static void compile_graph(struct compiled_graph *cg, struct graph *g)
+{
+	SDL_Surface *surface = SDL_CreateRGBSurface(0, g->w, g->h,
+						    32, 0, 0, 0, 0);
+	if (!surface) {
+		SDL_Log("Failed to create graph surface: %s", SDL_GetError());
+		exit(1);
+	}
+	SDL_FillRect(surface, 0, GRAPH_BG_COLOR);
+	SDL_Rect x_axis = { GRAPH_PADDING, GRAPH_PADDING, GRAPH_PADDING,
+			    g->h - 2 * GRAPH_PADDING };
+	SDL_FillRect(surface, &x_axis, GRAPH_FG_COLOR);
+	SDL_Rect y_axis= { GRAPH_PADDING, g->h - 2 * GRAPH_PADDING,
+			   g->w - 2 * GRAPH_PADDING, GRAPH_PADDING };
+	SDL_FillRect(surface, &y_axis, GRAPH_FG_COLOR);
+	float min_y = g->values[0];
+	float max_y = g->values[0];
+	for (int i = 1; i < g->num_values; i++) {
+		if (g->values[i] < min_y) {
+			min_y = g->values[i];
+		}
+		if (g->values[i] > max_y) {
+			max_y = g->values[i];
+		}
+	}
+	int w = g->w - 4 * GRAPH_PADDING;
+	int h = g->h - 4 * GRAPH_PADDING;
+	int x_step = w/(g->num_values - 1);
+	int x_offset = 3 * GRAPH_PADDING;
+	int prev_x = x_offset;
+	int prev_y = h * ((g->values[0] - min_y) / fabs(max_y - min_y));
+	prev_y = g->h - prev_y - 3 * GRAPH_PADDING;
+	for (int i = 1; i < g->num_values; i++) {
+		int x = x_offset + x_step * i;
+		int y = h * ((g->values[i] - min_y) / fabs(max_y - min_y));
+		y = g->h - y - 3 * GRAPH_PADDING;
+		draw_line(surface, prev_x, prev_y, x, y, GRAPH_LN_COLOR,
+			  GRAPH_LINE_WIDTH);
+		prev_x = x;
+		prev_y = y;
+	}
+	SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer, surface);
+	if (!texture) {
+		SDL_Log("Failed to create graph texture: %s", SDL_GetError());
+		exit(1);
+	}
+	SDL_FreeSurface(surface);
+	cg->graph = g;
+	cg->texture = texture;
+}
+
+static void render_graphs()
+{
+	for (int i = 0; i < num_graphs; i++) {
+		struct compiled_graph *cg = &graphs[i];
+		struct graph *g = cg->graph;
+		SDL_Rect r = { g->x, g->y, g->w, g->h };
+		SDL_RenderCopy(renderer, cg->texture, 0, &r);
+	}
+}
+
 void render()
 {
 	update_rendering_grid();
 	render_grid();
 	render_menus();
+	render_graphs();
 }
 
 
@@ -257,4 +408,15 @@ void render_pop_menu()
 {
 	num_menus--;
 	SDL_DestroyTexture(menus[num_menus].texture);
+}
+
+void render_push_graph(struct graph *g)
+{
+	compile_graph(&graphs[num_graphs++], g);
+}
+
+void render_pop_graph()
+{
+	num_graphs--;
+	SDL_DestroyTexture(graphs[num_graphs].texture);
 }
