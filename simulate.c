@@ -1,8 +1,13 @@
+#include <unistd.h>
+
 #include <SDL2/SDL.h>
 
 #include "game.h"
 #include "simulate.h"
 #include "render.h"
+
+#define POPULATION_RETENTION 128
+#define SAMPLE_FREQUENCY 5
 
 int population = 0;
 int emigration = 0;
@@ -14,6 +19,12 @@ struct house {
 
 static struct house houses[GRID_WIDTH * GRID_HEIGHT];
 static int num_houses = 0;
+
+static int sample_clock = 0;
+
+static float population_samples[POPULATION_RETENTION] = { 0 };
+static int num_population_samples = 0;
+static struct graph population_graph = { 0 };
 
 static void update_tile(int x, int y, enum tile_type type)
 {
@@ -140,6 +151,15 @@ void init_simulate()
 	place_random_lake();
 	place_random_road();
 	place_houses_along_road();
+	population_graph = (struct graph){
+		.x = 10,
+		.y = 100,
+		.w = 300,
+		.h = 100,
+		.values = population_samples,
+		.num_values = 0,
+	};
+	render_push_graph(&population_graph);
 }
 
 static void build_new_houses()
@@ -152,6 +172,22 @@ static void build_new_houses()
 			}
 		}
 	}
+}
+
+static void update_graphs()
+{
+	render_pop_graph();
+	population_graph.num_values = num_population_samples;
+	render_push_graph(&population_graph);
+}
+
+static void compress_population_samples()
+{
+	for (int i = 0; i < num_population_samples / 2; i++) {
+		population_samples[i] = (population_samples[2*i] +
+					 population_samples[2*i + 1]) / 2;
+	}
+	num_population_samples /= 2;
 }
 
 void simulate()
@@ -172,6 +208,15 @@ void simulate()
 			h->children++;
 		}
 		population += h->adults + h->children;
+	}
+	sample_clock++;
+	if (sample_clock == SAMPLE_FREQUENCY) {
+		sample_clock = 0;
+		population_samples[num_population_samples++] = population;
+		if (num_population_samples == POPULATION_RETENTION) {
+			compress_population_samples();
+		}
+	update_graphs();
 	}
 	emigration = moving_out;
 	build_new_houses();

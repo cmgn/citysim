@@ -320,21 +320,8 @@ static void draw_line(SDL_Surface *surface, int x0, int y0, int x1, int y1,
 	}
 }
 
-static void compile_graph(struct compiled_graph *cg, struct graph *g)
+static void draw_graph_data(struct graph *g, SDL_Surface *surface)
 {
-	SDL_Surface *surface = SDL_CreateRGBSurface(0, g->w, g->h,
-						    32, 0, 0, 0, 0);
-	if (!surface) {
-		SDL_Log("Failed to create graph surface: %s", SDL_GetError());
-		exit(1);
-	}
-	SDL_FillRect(surface, 0, GRAPH_BG_COLOR);
-	SDL_Rect x_axis = { GRAPH_PADDING, GRAPH_PADDING, GRAPH_PADDING,
-			    g->h - 2 * GRAPH_PADDING };
-	SDL_FillRect(surface, &x_axis, GRAPH_FG_COLOR);
-	SDL_Rect y_axis= { GRAPH_PADDING, g->h - 2 * GRAPH_PADDING,
-			   g->w - 2 * GRAPH_PADDING, GRAPH_PADDING };
-	SDL_FillRect(surface, &y_axis, GRAPH_FG_COLOR);
 	float min_y = g->values[0];
 	float max_y = g->values[0];
 	for (int i = 1; i < g->num_values; i++) {
@@ -360,6 +347,26 @@ static void compile_graph(struct compiled_graph *cg, struct graph *g)
 			  GRAPH_LINE_WIDTH);
 		prev_x = x;
 		prev_y = y;
+	}
+}
+
+static void compile_graph(struct compiled_graph *cg, struct graph *g)
+{
+	SDL_Surface *surface = SDL_CreateRGBSurface(0, g->w, g->h,
+						    32, 0, 0, 0, 0);
+	if (!surface) {
+		SDL_Log("Failed to create graph surface: %s", SDL_GetError());
+		exit(1);
+	}
+	SDL_FillRect(surface, 0, GRAPH_BG_COLOR);
+	SDL_Rect x_axis = { GRAPH_PADDING, GRAPH_PADDING, GRAPH_PADDING,
+			    g->h - 2 * GRAPH_PADDING };
+	SDL_FillRect(surface, &x_axis, GRAPH_FG_COLOR);
+	SDL_Rect y_axis= { GRAPH_PADDING, g->h - 2 * GRAPH_PADDING,
+			   g->w - 2 * GRAPH_PADDING, GRAPH_PADDING };
+	SDL_FillRect(surface, &y_axis, GRAPH_FG_COLOR);
+	if (g->num_values > 1) {
+		draw_graph_data(g, surface);
 	}
 	SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer, surface);
 	if (!texture) {

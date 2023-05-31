@@ -60,7 +60,7 @@ int main(int argc, char **argv)
 			}
 		}
 		unsigned long long this_frame = SDL_GetTicks64();
-		if (this_frame - last_frame < 250) {
+		if (this_frame - last_frame < 25) {
 			continue;
 		}
 		last_frame = this_frame;
