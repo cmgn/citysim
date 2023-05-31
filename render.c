@@ -32,6 +32,15 @@ struct compiled_graph {
 #define RCELL_WIDTH ((GRID_WIDTH)/(RGRID_HEIGHT))
 #define RCELL_HEIGHT ((GRID_HEIGHT)/(RGRID_HEIGHT))
 
+#define MAX_GRAPHS 32
+
+#define GRAPH_LINE_WIDTH 2
+#define GRAPH_PADDING 3
+
+#define GRAPH_BG_COLOR RGBA(255, 255, 255, 255)
+#define GRAPH_FG_COLOR RGBA(  0,   0,   0, 255)
+#define GRAPH_LN_COLOR RGBA(255,   0,   0, 255)
+
 static struct rendering_tile rendering_grid[RGRID_HEIGHT][RGRID_WIDTH] = { 0 };
 
 static const char *tile_bitmap_paths[TILE_TYPE_COUNT] = {
@@ -44,8 +53,6 @@ static SDL_Surface *tile_surfaces[TILE_TYPE_COUNT] = { 0 };
 
 static struct compiled_menu menus[MAX_MENUS] = { 0 };
 static int num_menus = 0;
-
-#define MAX_GRAPHS 32
 
 static struct compiled_graph graphs[MAX_GRAPHS] = { 0 };
 static int num_graphs = 0;
@@ -309,13 +316,6 @@ static void draw_line(SDL_Surface *surface, int x0, int y0, int x1, int y1, unsi
 		}
 	}
 }
-
-#define GRAPH_LINE_WIDTH 2
-#define GRAPH_PADDING 3
-
-#define GRAPH_BG_COLOR RGBA(255, 255, 255, 255)
-#define GRAPH_FG_COLOR RGBA(  0,   0,   0, 255)
-#define GRAPH_LN_COLOR RGBA(255,   0,   0, 255)
 
 static void compile_graph(struct compiled_graph *cg, struct graph *g)
 {
