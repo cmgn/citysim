@@ -216,7 +216,7 @@ void simulate()
 		if (num_population_samples == POPULATION_RETENTION) {
 			compress_population_samples();
 		}
-	update_graphs();
+		update_graphs();
 	}
 	emigration = moving_out;
 	build_new_houses();
