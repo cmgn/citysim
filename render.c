@@ -254,7 +254,8 @@ static void render_menus()
 	}
 }
 
-static void draw_line_gradual(SDL_Surface *surface, int x0, int y0, int x1, int y1, unsigned int color, int width)
+static void draw_line_gradual(SDL_Surface *surface, int x0, int y0, int x1, int y1,
+			      unsigned int color, int width)
 {
 	int dx = x1 - x0;
 	int dy = y1 - y0;
@@ -277,7 +278,8 @@ static void draw_line_gradual(SDL_Surface *surface, int x0, int y0, int x1, int 
 	}
 }
 
-static void draw_line_steep(SDL_Surface *surface, int x0, int y0, int x1, int y1, unsigned int color, int width)
+static void draw_line_steep(SDL_Surface *surface, int x0, int y0, int x1, int y1,
+			    unsigned int color, int width)
 {
 	int dx = x1 - x0;
 	int dy = y1 - y0;
@@ -300,7 +302,8 @@ static void draw_line_steep(SDL_Surface *surface, int x0, int y0, int x1, int y1
 	}
 }
 
-static void draw_line(SDL_Surface *surface, int x0, int y0, int x1, int y1, unsigned int color, int width)
+static void draw_line(SDL_Surface *surface, int x0, int y0, int x1, int y1,
+		      unsigned int color, int width)
 {
 	if (abs(y1 - y0) < abs(x1 - x0)) {
 		if (x0 > x1) {
