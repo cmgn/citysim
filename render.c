@@ -182,11 +182,6 @@ static void render_grid()
 	}
 }
 
-struct wh_pair {
-	int w;
-	int h;
-};
-
 static void compile_menu(struct compiled_menu *cm, struct menu *m)
 {
 	cm->menu = m;
